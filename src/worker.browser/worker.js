@@ -8,8 +8,15 @@ if (typeof window.Worker !== 'object' && typeof window.Worker !== 'function') {
   throw new Error('Browser does not support web workers!');
 }
 
-const slaveCodeDataUri = 'data:text/javascript;charset=utf-8,' + encodeURI(slaveCode);
-
+var blob;
+try {
+    blob = new Blob([slaveCode], {type: 'application/javascript'});
+} catch (e) { // Backwards-compatibility
+    var BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder;
+    blob = new BlobBuilder();
+    blob.append(slaveCode);
+    blob = blob.getBlob();
+}
 
 function prependScriptUrl(scriptUrl) {
   const prefix = getConfig().basepath.web;
@@ -57,12 +64,12 @@ export default class Worker extends EventEmitter {
 
   initWorker() {
     try {
-      this.worker = new window.Worker(slaveCodeDataUri);
+      this.worker = new window.Worker(URL.createObjectURL(blob));
     } catch (error) {
       const slaveScriptUrl = getConfig().fallback.slaveScriptUrl;
       if (slaveScriptUrl) {
         // try using the slave script file instead of the data URI
-        this.worker = new window.Worker(slaveCodeDataUri);
+        this.worker = new window.Worker(slaveScriptUrl);
       } else {
         // re-throw
         throw error;
@@ -77,6 +84,18 @@ export default class Worker extends EventEmitter {
       this.runScripts(toRun, importScripts);
     }
     return this;
+  }
+
+  require(method) {
+    const methodStr = method.toString();
+    const args = methodStr.substring(methodStr.indexOf('(') + 1, methodStr.indexOf(')')).split(',');
+    const body = methodStr.substring(methodStr.indexOf('{') + 1, methodStr.lastIndexOf('}'));
+
+    this.worker.postMessage({
+      require: true,
+      method: { args, body },
+      name: method.name
+    });
   }
 
   runMethod(method, importScripts) {

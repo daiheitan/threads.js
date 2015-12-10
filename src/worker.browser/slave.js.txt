@@ -46,6 +46,12 @@ self.onmessage = function (event) {
     }
   }
 
+  if (event.data.require) {
+    method = event.data.method;
+    var name = event.data.name;
+    this[name] = Function.apply(null, method.args.concat(method.body));
+  }
+
   if (event.data.doRun) {
     var handler = this.module.exports;
     if (typeof handler !== 'function') {
@@ -55,6 +61,9 @@ self.onmessage = function (event) {
     var preparedHandlerDone = handlerDone.bind(this);
     preparedHandlerDone.transfer = handlerDoneTransfer.bind(this);
 
-    handler.call(this, event.data.param, preparedHandlerDone, handlerProgress.bind(this));
+    var result = handler.call(this, event.data.param, preparedHandlerDone, handlerProgress.bind(this));
+    if (result) {
+      preparedHandlerDone(result);
+    }
   }
 }.bind(self);

@@ -40,6 +40,7 @@ export default class Job extends EventEmitter {
   }
 
   executeOn(thread) {
+    this.emit('hasThread', thread);
     thread
       .once('message', this.emit.bind(this, 'done'))
       .once('error', this.emit.bind(this, 'error'))
@@ -47,14 +48,24 @@ export default class Job extends EventEmitter {
       .send(...this.sendArgs);
 
     this.thread = thread;
+
     return this;
   }
 
   promise() {
-    if (!this.thread) {
-      throw new Error('Cannot return promise, since job is not executed.');
-    }
-    return this.thread.promise();
+    return new Promise((resolve, reject) => {
+      if (this.thread) {
+        resolve(this.thread.promise());
+      } else {
+        this.once('hasThread', (thread) => {
+          if (!thread) {
+            reject(new Error('Cannot return promise, since job is not executed.'));
+          } else {
+            resolve(thread.promise());
+          }
+        });
+      }
+    });
   }
 
   clone() {
