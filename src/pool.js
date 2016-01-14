@@ -14,8 +14,8 @@ export default class Pool extends EventEmitter {
     this.on('newJob', this.handleNewJob.bind(this));
   }
 
-  require(method) {
-    this.threads.forEach(thread => thread.require(method));
+  require(method, name) {
+    this.threads.forEach(thread => thread.require(method, name));
   }
 
   run(...args) {

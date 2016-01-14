@@ -86,7 +86,7 @@ export default class Worker extends EventEmitter {
     return this;
   }
 
-  require(method) {
+  require(method, name) {
     const methodStr = method.toString();
     const args = methodStr.substring(methodStr.indexOf('(') + 1, methodStr.indexOf(')')).split(',');
     const body = methodStr.substring(methodStr.indexOf('{') + 1, methodStr.lastIndexOf('}'));
@@ -94,7 +94,7 @@ export default class Worker extends EventEmitter {
     this.worker.postMessage({
       require: true,
       method: { args, body },
-      name: method.name
+      name: name || method.name
     });
   }
 

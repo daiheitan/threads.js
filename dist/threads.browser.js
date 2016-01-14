@@ -147,7 +147,7 @@ var Worker = (function (_EventEmitter) {
     return this;
   };
 
-  Worker.prototype.require = function require(method) {
+  Worker.prototype.require = function require(method, name) {
     var methodStr = method.toString();
     var args = methodStr.substring(methodStr.indexOf('(') + 1, methodStr.indexOf(')')).split(',');
     var body = methodStr.substring(methodStr.indexOf('{') + 1, methodStr.lastIndexOf('}'));
@@ -155,7 +155,7 @@ var Worker = (function (_EventEmitter) {
     this.worker.postMessage({
       require: true,
       method: { args: args, body: body },
-      name: method.name
+      name: name || method.name
     });
   };
 
@@ -515,9 +515,9 @@ var Pool = (function (_EventEmitter) {
     this.on('newJob', this.handleNewJob.bind(this));
   }
 
-  Pool.prototype.require = function require(method) {
+  Pool.prototype.require = function require(method, name) {
     this.threads.forEach(function (thread) {
-      return thread.require(method);
+      return thread.require(method, name);
     });
   };
 
