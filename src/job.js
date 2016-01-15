@@ -41,8 +41,15 @@ export default class Job extends EventEmitter {
 
   executeOn(thread) {
     this.emit('hasThread', thread);
+    var that = this;
     thread
-      .once('message', this.emit.bind(this, 'done'))
+      .off('progress')
+      .on('progress', function(e) {
+        that.emit('progress', e);
+      })
+      .once('message', function() {
+        that.emit('done');
+      })
       .once('error', this.emit.bind(this, 'error'))
       .run(...this.runArgs)
       .send(...this.sendArgs);
